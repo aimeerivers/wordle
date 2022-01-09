@@ -1,5 +1,3 @@
-words = IO.read("./words.txt").split("\n")
-
 class String
 
   def character_score
@@ -7,39 +5,127 @@ class String
   end
 
   def score
-    self.chars.reduce(0) {|collect, char|
+    self.chars.uniq.reduce(0) {|collect, char|
       collect += char.character_score
     }
   end
 end
 
-puts "\nTOP 10"
-words.select do |word|
-  word if word.chars.uniq.count == 5
-end.sort_by(&:score).reverse.take(10).each {|w| puts "#{w} (#{w.score})" }
+class Solve
 
-puts "\nVOWELS"
-words.select do |word|
-  vowels = word.chars.uniq.select{|letter| /(a|e|i|o|u)/.match?(letter) }
-  word if vowels.count >= 4
-end.sort_by(&:score).reverse.each {|w| puts "#{w} (#{w.score})" }
+  attr_accessor :known_letters, :known_wrong, :included_letters, :eliminated_letters
 
-puts "\nCOMMON LETTERS"
-words.select do |word|
-  interesting = word.chars.uniq.select{|letter| /(e|t|a|o|i|n|s|r|h|l|d|c)/.match?(letter) }
-  word if
-    interesting.count >= 5 &&
-    word.match?(/(\w{2}r\w{2})/) &&
-    word.match?(/(e)/) &&
-    !word.match?(/(a|u|i)/)
-end.sort_by(&:score).reverse.each {|w| puts "#{w} (#{w.score})" }
+  def initialize
+    @tries = 0
+    @words = IO.read("./words.txt").split("\n")
+    @known_letters = ['', '', '', '', '']
+    @known_wrong = [[], [], [], [], []]
+    @included_letters = []
+    @eliminated_letters = []
 
-puts "\nGUESSES"
-words.select do |word|
-  word if
-    # word.chars.uniq.count == 5 &&
-    word.match?(/(\worge)/) &&
-    # word.match?(/(r|a)/) &&
-    !word.match?(/(m|n|b|p|a|u|i|t|s|f|c|h|d)/)
-end.sort_by(&:score).reverse.each {|w| puts "#{w} (#{w.score})" }
+    instructions
 
+    try(high_vowels.take(5).sample)
+
+    while !solved? && @tries < 3
+      try(filter_guesses(common_letters).first)
+    end
+
+    while !solved? && @tries < 5
+      try(filter_guesses(@words).first)
+    end
+
+    if !solved?
+      final_guesses = filter_guesses(@words)
+      if final_guesses.size == 1
+        puts "\nLast guess! Pretty sure it is:"
+        try(final_guesses.first)
+      else
+        puts "\nYour final guess must be one of these:"
+        final_guesses.each do |word|
+          puts word.upcase
+        end
+      end
+    end
+
+    if solved?
+      puts "\nThe word was: #{@known_letters.join.upcase}"
+    end
+  end
+
+  def instructions
+    puts "\nTry each suggestion in Wordle, and type in the result."
+    puts "For a green letter, type a 'g', for a yellow letter, a 'y'"
+    puts "For all other letters, type an 'x'"
+    puts "Example result: xxgyx\n"
+  end
+
+  def solved?
+    !@known_letters.include?('')
+  end
+
+  def try(guess)
+    @tries += 1
+    puts "\nGuess #{@tries}:  #{guess.upcase}"
+    print "Result:   "
+    result = gets.chomp
+  
+    guess_chars = guess.chars
+  
+    result.chars.each_with_index do |feedback, idx|
+      @known_letters[idx] = guess_chars[idx] if feedback == 'g'
+      if feedback == 'x'
+        @known_wrong[idx] << guess_chars[idx]
+        @eliminated_letters << guess_chars[idx] unless @known_letters.include?(guess_chars[idx])
+      end
+      if feedback == 'y'
+        @included_letters << guess_chars[idx]
+        @known_wrong[idx] << guess_chars[idx]
+      end
+    end
+  
+    @eliminated_letters.uniq!
+    @included_letters.uniq!
+
+    # puts @known_letters.inspect
+    # puts @known_wrong.inspect
+    # puts @included_letters.inspect
+    # puts @eliminated_letters.inspect
+  end
+
+  def high_vowels
+    @words.select do |word|
+      vowels = word.chars.uniq.select{|letter|
+        Regexp.union('aeiou'.chars).match?(letter)
+      }
+      word if vowels.count >= 4
+    end.sort_by(&:score).reverse
+  end
+
+  def common_letters
+    @words.select do |word|
+      interesting = word.chars.uniq.select{|letter|
+        Regexp.union('etaoinsrhldc'.chars).match?(letter)
+      }
+      word if interesting.count >= 5
+    end.sort_by(&:score).reverse
+  end
+
+  def filter_guesses(guesses)
+    known_regex = /#{@known_letters.map{|l| l == "" ? /\w/ : l}.join}/
+    eliminated_regex = Regexp.union(@eliminated_letters)
+    guesses.select do |word|
+      word if word.match?(known_regex) &&
+        @included_letters.all? {|l| word.include?(l) } &&
+        !word.match?(eliminated_regex) &&
+        !@known_wrong[0].include?(word[0]) &&
+        !@known_wrong[1].include?(word[1]) &&
+        !@known_wrong[2].include?(word[2]) &&
+        !@known_wrong[3].include?(word[3]) &&
+        !@known_wrong[4].include?(word[4])
+    end.sort_by(&:score).reverse
+  end
+
+end
+
+Solve.new
