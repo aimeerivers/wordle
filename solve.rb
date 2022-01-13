@@ -36,16 +36,13 @@ class Solve
     end
 
     if !solved?
-      final_guesses = filter_guesses(@words.take(10))
+      final_guesses = filter_guesses(@words)
       if final_guesses.size == 1
         puts "\nLast guess! Pretty sure it is:"
-        try(final_guesses.first)
       else
         puts "\nYour final guess must be one of these:"
-        final_guesses.each do |word|
-          puts word.upcase
-        end
       end
+      try(final_guesses)
     end
 
     if solved?
