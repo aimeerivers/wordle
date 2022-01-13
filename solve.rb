@@ -125,6 +125,18 @@ class Solve
     end.sort_by(&:score).reverse
   end
 
+  def low_character_count_words
+    @words.select do |word|
+      word if word.chars.uniq.count < 3
+    end
+  end
+
+  def no_vowel_words
+    @words.select do |word|
+      word unless Regexp.union('aeiou'.chars).match?(word)
+    end
+  end
+
 end
 
 Solve.new
