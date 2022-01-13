@@ -106,7 +106,7 @@ class Solve
       interesting = word.chars.uniq.select{|letter|
         Regexp.union('etaoinsrhldc'.chars).match?(letter)
       }
-      word if interesting.count >= 5
+      word if interesting.count >= 3
     end.sort_by(&:score).reverse
   end
 
