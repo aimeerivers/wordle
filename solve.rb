@@ -18,6 +18,7 @@ class Solve
   def initialize
     @tries = 0
     @words = IO.read("./words.txt").split("\n")
+    @common_words = IO.read("./common_words.txt").split("\n")
     @known_letters = ['', '', '', '', '']
     @known_wrong = [[], [], [], [], []]
     @included_letters = []
@@ -32,11 +33,11 @@ class Solve
     end
 
     while !solved? && @tries < 5
-      try(filter_guesses(@words).take(10))
+      try(filter_guesses(@common_words).take(10))
     end
 
     if !solved?
-      final_guesses = filter_guesses(@words)
+      final_guesses = filter_guesses(@common_words)
       if final_guesses.size == 1
         puts "\nLast guess! Pretty sure it is:"
       else
