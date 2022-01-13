@@ -25,18 +25,18 @@ class Solve
 
     instructions
 
-    try(high_vowels.take(5).sample)
+    try(high_vowels.take(10).shuffle)
 
     while !solved? && @tries < 3
-      try(filter_guesses(common_letters).first)
+      try(filter_guesses(common_letters).take(10))
     end
 
     while !solved? && @tries < 5
-      try(filter_guesses(@words).first)
+      try(filter_guesses(@words).take(10))
     end
 
     if !solved?
-      final_guesses = filter_guesses(@words)
+      final_guesses = filter_guesses(@words.take(10))
       if final_guesses.size == 1
         puts "\nLast guess! Pretty sure it is:"
         try(final_guesses.first)
@@ -64,9 +64,11 @@ class Solve
     !@known_letters.include?('')
   end
 
-  def try(guess)
+  def try(guesses)
     @tries += 1
-    puts "\nGuess #{@tries}:  #{guess.upcase}"
+    puts "\nGuess #{@tries}:  #{guesses.join(', ').upcase}"
+    print "Guess:    "
+    guess = gets.chomp.downcase
     print "Result:   "
     result = gets.chomp
   
